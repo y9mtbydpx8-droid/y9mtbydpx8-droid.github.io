@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b0d">
+  <title>After the Last Bell</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      background: #090b0d;
+      color: #ece9de;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 50% 20%, #202326 0, #101214 40%, #090b0d 78%);
+    }
+
+    button { font: inherit; }
+
+    .page {
+      width: min(1120px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 22px 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .eyebrow {
+      margin: 0 0 5px;
+      color: #ba9b69;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(25px, 4vw, 39px);
+      font-weight: 500;
+      letter-spacing: .035em;
+    }
+
+    .key-counter {
+      flex: 0 0 auto;
+      border: 1px solid #49433a;
+      background: #131517;
+      padding: 10px 15px;
+      color: #d3c8b3;
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .key-counter strong {
+      margin-right: 5px;
+      color: #f0c66f;
+      font-size: 19px;
+    }
+
+    .game-frame {
+      position: relative;
+      flex: 1;
+      min-height: 390px;
+      overflow: hidden;
+      border: 1px solid #49443a;
+      background: #101210;
+      box-shadow: 0 18px 70px #000a, inset 0 0 60px #000;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 390px;
+      image-rendering: pixelated;
+      touch-action: none;
+    }
+
+    .status {
+      position: absolute;
+      left: 16px;
+      bottom: 14px;
+      max-width: min(470px, calc(100% - 32px));
+      padding: 8px 11px;
+      border: 1px solid #ffffff20;
+      background: #080a0bcc;
+      color: #d5d0c4;
+      font-size: 13px;
+      line-height: 1.4;
+      pointer-events: none;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+      background: #050607c9;
+      text-align: center;
+      backdrop-filter: blur(3px);
+    }
+
+    .overlay[hidden] { display: none; }
+
+    .card {
+      width: min(440px, 100%);
+      padding: 30px 28px;
+      border: 1px solid #8e7650;
+      background: linear-gradient(145deg, #171919f5, #0b0d0ef5);
+      box-shadow: 0 20px 70px #000c;
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      color: #ead9b5;
+      font: 500 clamp(26px, 5vw, 38px)/1.1 Georgia, "Times New Roman", serif;
+    }
+
+    .card p {
+      margin: 0 auto 21px;
+      color: #c1beb4;
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    .primary {
+      border: 1px solid #d5b36f;
+      padding: 11px 22px;
+      background: #8b6935;
+      color: #fff8e9;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      transition: background .15s, transform .15s;
+    }
+
+    .primary:hover { background: #a17b40; transform: translateY(-1px); }
+    .primary:focus-visible, .touch-controls button:focus-visible { outline: 2px solid #f0c66f; outline-offset: 3px; }
+
+    .help {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px 20px;
+      color: #a9a69d;
+      font-size: 12px;
+      letter-spacing: .025em;
+    }
+
+    .help strong { color: #d5c49e; font-weight: 600; }
+
+    .touch-controls {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      display: none;
+      grid-template-columns: repeat(3, 42px);
+      grid-template-rows: repeat(2, 42px);
+      gap: 4px;
+      opacity: .8;
+    }
+
+    .touch-controls button {
+      border: 1px solid #c8b98b80;
+      border-radius: 5px;
+      background: #111512d9;
+      color: #f0e8d4;
+      font-size: 20px;
+      touch-action: none;
+    }
+
+    .touch-controls [data-dir="up"] { grid-column: 2; grid-row: 1; }
+    .touch-controls [data-dir="left"] { grid-column: 1; grid-row: 2; }
+    .touch-controls [data-dir="down"] { grid-column: 2; grid-row: 2; }
+    .touch-controls [data-dir="right"] { grid-column: 3; grid-row: 2; }
+
+    @media (pointer: coarse) {
+      .touch-controls { display: grid; }
+      .help .desktop { display: none; }
+    }
+
+    @media (max-width: 600px) {
+      .page { padding: 15px 12px 12px; gap: 10px; }
+      header { align-items: center; }
+      .game-frame, canvas { min-height: 64vh; }
+      .key-counter { padding: 8px 10px; font-size: 11px; }
+      .key-counter strong { font-size: 16px; }
+      .status { bottom: 160px; font-size: 12px; }
+      .help { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <p class="eyebrow">A haunted school after dark</p>
+        <h1>After the Last Bell</h1>
+      </div>
+      <div class="key-counter" aria-live="polite"><strong id="key-count">0</strong>/3 keys</div>
+    </header>
+
+    <section class="game-frame" aria-label="Haunted school maze game">
+      <canvas id="game" aria-label="Explore the school with your flashlight, find three keys, and reach the exit"></canvas>
+      <div class="status" id="status" aria-live="polite">The front doors are chained shut. Find three keys.</div>
+      <div class="touch-controls" aria-label="Movement controls">
+        <button type="button" data-dir="up" aria-label="Move up">↑</button>
+        <button type="button" data-dir="left" aria-label="Move left">←</button>
+        <button type="button" data-dir="down" aria-label="Move down">↓</button>
+        <button type="button" data-dir="right" aria-label="Move right">→</button>
+      </div>
+      <div class="overlay" id="overlay">
+        <div class="card">
+          <p class="eyebrow">The doors just locked behind you</p>
+          <h2 id="overlay-title">No one left at school</h2>
+          <p id="overlay-copy">The halls keep changing in the dark. Find all three keys, then make it back to the front entrance. Something is wandering the corridors.</p>
+          <button class="primary" id="start-button" type="button">Enter the school</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="help">
+      <span class="desktop"><strong>Move</strong> WASD / arrow keys &nbsp;·&nbsp; <strong>Flashlight</strong> F</span>
+      <span class="mobile"><strong>Move</strong> use the arrows &nbsp;·&nbsp; <strong>Flashlight</strong> tap the beam icon</span>
+      <span><strong>Goal</strong> find 3 keys and return to the exit</span>
+    </div>
+  </main>
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.querySelector("#game");
+      const ctx = canvas.getContext("2d");
+      const frame = document.querySelector(".game-frame");
+      const overlay = document.querySelector("#overlay");
+      const overlayTitle = document.querySelector("#overlay-title");
+      const overlayCopy = document.querySelector("#overlay-copy");
+      const startButton = document.querySelector("#start-button");
+      const keyCount = document.querySelector("#key-count");
+      const status = document.querySelector("#status");
+
+      const COLS = 41;
+      const ROWS = 33;
+      const TILE = 48;
+      const DIRECTIONS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+      const keysDown = new Set();
+      const keys = [];
+      const grid = [];
+      const player = { x: 0, y: 0, radius: 11, facingX: 1, facingY: 0, speed: 184 };
+      const ghost = { x: 0, y: 0, targetX: 0, targetY: 0, active: false, stepTimer: 0 };
+      let exit = { x: 0, y: 0 };
+      let collected = 0;
+      let started = false;
+      let ended = false;
+      let flashlightOn = true;
+      let lastTime = 0;
+      let messageTimer = 0;
+      let width = 0;
+      let height = 0;
+      let dpr = 1;
+      let cameraX = 0;
+      let cameraY = 0;
+
+      const center = (column, row) => ({ x: (column + 0.5) * TILE, y: (row + 0.5) * TILE });
+      const sameCell = (a, b) => a.x === b.x && a.y === b.y;
+      const inside = (x, y) => x >= 0 && y >= 0 && x < COLS && y < ROWS;
+      const walkable = (x, y) => inside(x, y) && grid[y][x] === 0;
+
+      function makeMaze() {
+        for (let y = 0; y < ROWS; y++) grid.push(Array(COLS).fill(1));
+        const visited = new Set(["1,1"]);
+        const stack = [{ x: 1, y: 1 }];
+        grid[1][1] = 0;
+
+        while (stack.length) {
+          const current = stack[stack.length - 1];
+          const options = DIRECTIONS
+            .map(([dx, dy]) => ({ x: current.x + dx * 2, y: current.y + dy * 2, dx, dy }))
+            .filter(next => inside(next.x, next.y) && !visited.has(`${next.x},${next.y}`));
+          if (!options.length) {
+            stack.pop();
+            continue;
+          }
+          const next = options[Math.floor(Math.random() * options.length)];
+          grid[current.y + next.dy][current.x + next.dx] = 0;
+          grid[next.y][next.x] = 0;
+          visited.add(`${next.x},${next.y}`);
+          stack.push(next);
+        }
+
+        const distances = distanceMap(1, 1);
+        const farthest = [...distances.entries()].sort((a, b) => b[1] - a[1])[0][0].split(",").map(Number);
+        exit = { x: farthest[0], y: farthest[1] };
+        player.x = center(1, 1).x;
+        player.y = center(1, 1).y;
+
+        const candidates = [...distances.entries()]
+          .filter(([cell, distance]) => distance > 12 && cell !== `${exit.x},${exit.y}`)
+          .map(([cell]) => {
+            const [x, y] = cell.split(",").map(Number);
+            return { x, y };
+          });
+        for (let i = candidates.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        }
+        for (const candidate of candidates) {
+          if (keys.every(key => Math.hypot(candidate.x - key.x, candidate.y - key.y) >= 5)) {
+            keys.push({ ...candidate, found: false, phase: Math.random() * Math.PI * 2 });
+            if (keys.length === 3) break;
+          }
+        }
+
+        const ghostStart = [...distances.entries()]
+          .filter(([cell]) => cell !== "1,1" && cell !== `${exit.x},${exit.y}`)
+          .map(([cell, distance]) => ({ cell, distance }))
+          .sort((a, b) => b.distance - a.distance)[0].cell.split(",").map(Number);
+        const ghostPoint = center(ghostStart[0], ghostStart[1]);
+        ghost.x = ghostPoint.x;
+        ghost.y = ghostPoint.y;
+        ghost.targetX = ghost.x;
+        ghost.targetY = ghost.y;
+      }
+
+      function distanceMap(startX, startY) {
+        const distances = new Map([[`${startX},${startY}`, 0]]);
+        const queue = [{ x: startX, y: startY }];
+        for (let i = 0; i < queue.length; i++) {
+          const current = queue[i];
+          const distance = distances.get(`${current.x},${current.y}`);
+          for (const [dx, dy] of DIRECTIONS) {
+            const x = current.x + dx;
+            const y = current.y + dy;
+            const cell = `${x},${y}`;
+            if (walkable(x, y) && !distances.has(cell)) {
+              distances.set(cell, distance + 1);
+              queue.push({ x, y });
+            }
+          }
+        }
+        return distances;
+      }
+
+      function resize() {
+        const rect = frame.getBoundingClientRect();
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = rect.width;
+        height = rect.height;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function canOccupy(x, y) {
+        const radius = player.radius;
+        const left = Math.floor((x - radius) / TILE);
+        const right = Math.floor((x + radius) / TILE);
+        const top = Math.floor((y - radius) / TILE);
+        const bottom = Math.floor((y + radius) / TILE);
+        for (let row = top; row <= bottom; row++) {
+          for (let column = left; column <= right; column++) {
+            if (!walkable(column, row)) return false;
+          }
+        }
+        return true;
+      }
+
+      function movePlayer(dx, dy, dt) {
+        let moveX = dx;
+        let moveY = dy;
+        if (moveX && moveY) {
+          moveX *= Math.SQRT1_2;
+          moveY *= Math.SQRT1_2;
+        }
+        if (moveX || moveY) {
+          player.facingX = moveX;
+          player.facingY = moveY;
+        }
+        const steps = Math.max(1, Math.ceil(player.speed * dt / 5));
+        const stepX = moveX * player.speed * dt / steps;
+        const stepY = moveY * player.speed * dt / steps;
+        for (let i = 0; i < steps; i++) {
+          if (canOccupy(player.x + stepX, player.y)) player.x += stepX;
+          if (canOccupy(player.x, player.y + stepY)) player.y += stepY;
+        }
+      }
+
+      function moveGhost(dt) {
+        if (collected === 0) return;
+        ghost.active = true;
+        ghost.stepTimer -= dt;
+        const targetCellX = Math.floor(player.x / TILE);
+        const targetCellY = Math.floor(player.y / TILE);
+        const ghostCellX = Math.floor(ghost.x / TILE);
+        const ghostCellY = Math.floor(ghost.y / TILE);
+        const atTarget = Math.hypot(ghost.targetX - ghost.x, ghost.targetY - ghost.y) < 2;
+        if (ghostCellX === targetCellX && ghostCellY === targetCellY) {
+          ghost.targetX = player.x;
+          ghost.targetY = player.y;
+          ghost.stepTimer = 0.9;
+        } else if (ghost.stepTimer <= 0 || atTarget) {
+          const previousCellX = Math.floor((ghost.targetX || ghost.x) / TILE);
+          const previousCellY = Math.floor((ghost.targetY || ghost.y) / TILE);
+          const startX = atTarget ? ghostCellX : previousCellX;
+          const startY = atTarget ? ghostCellY : previousCellY;
+          const paths = new Map([[`${startX},${startY}`, null]]);
+          const queue = [{ x: startX, y: startY }];
+          let found = false;
+          for (let i = 0; i < queue.length && !found; i++) {
+            const current = queue[i];
+            for (const [dx, dy] of DIRECTIONS) {
+              const x = current.x + dx;
+              const y = current.y + dy;
+              const cell = `${x},${y}`;
+              if (!walkable(x, y) || paths.has(cell)) continue;
+              paths.set(cell, `${current.x},${current.y}`);
+              if (x === targetCellX && y === targetCellY) {
+                found = true;
+                break;
+              }
+              queue.push({ x, y });
+            }
+          }
+          let next = `${targetCellX},${targetCellY}`;
+          if (found) {
+            while (paths.get(next) && paths.get(next) !== `${startX},${startY}`) next = paths.get(next);
+            if (paths.get(next) === `${startX},${startY}`) {
+              const [x, y] = next.split(",").map(Number);
+              const point = center(x, y);
+              ghost.targetX = point.x;
+              ghost.targetY = point.y;
+            }
+          }
+          ghost.stepTimer = 0.9;
+        }
+        const dx = ghost.targetX - ghost.x;
+        const dy = ghost.targetY - ghost.y;
+        const distance = Math.hypot(dx, dy);
+        const travel = 58 * dt;
+        if (distance > 0) {
+          ghost.x += dx / distance * Math.min(travel, distance);
+          ghost.y += dy / distance * Math.min(travel, distance);
+        }
+      }
+
+      function setMessage(text, seconds = 2.2) {
+        status.textContent = text;
+        messageTimer = seconds;
+      }
+
+      function checkGame() {
+        for (const key of keys) {
+          if (key.found) continue;
+          const point = center(key.x, key.y);
+          if (Math.hypot(player.x - point.x, player.y - point.y) < 25) {
+            key.found = true;
+            collected++;
+            keyCount.textContent = collected;
+            setMessage(collected === 3 ? "You have all three keys. Get back to the front doors!" : "You found a key. Something stirs in the halls…");
+          }
+        }
+
+        const exitPoint = center(exit.x, exit.y);
+        if (Math.hypot(player.x - exitPoint.x, player.y - exitPoint.y) < 25) {
+          if (collected === 3) finish(true);
+          else if (messageTimer <= 0) setMessage(`The front doors need ${3 - collected} more ${3 - collected === 1 ? "key" : "keys"}.`);
+        }
+
+        if (ghost.active && Math.hypot(player.x - ghost.x, player.y - ghost.y) < 19) finish(false);
+      }
+
+      function finish(escaped) {
+        if (ended) return;
+        ended = true;
+        started = false;
+        overlayTitle.textContent = escaped ? "You made it out" : "The halls keep you";
+        overlayCopy.textContent = escaped
+          ? "The lock gives way and the night air rushes in. You left the school behind—with all three keys."
+          : "A cold hand closes around your shoulder. The front doors are still somewhere in the dark.";
+        startButton.textContent = "Play again";
+        overlay.hidden = false;
+        if (escaped) setMessage("The doors are open. Run!", 99);
+      }
+
+      function update(dt) {
+        if (!started || ended) return;
+        let dx = 0;
+        let dy = 0;
+        if (keysDown.has("ArrowLeft") || keysDown.has("a")) dx--;
+        if (keysDown.has("ArrowRight") || keysDown.has("d")) dx++;
+        if (keysDown.has("ArrowUp") || keysDown.has("w")) dy--;
+        if (keysDown.has("ArrowDown") || keysDown.has("s")) dy++;
+        movePlayer(dx, dy, dt);
+        moveGhost(dt);
+        checkGame();
+        messageTimer = Math.max(0, messageTimer - dt);
+        if (messageTimer === 0) {
+          status.textContent = collected === 3
+            ? "All three keys found. Follow the halls back to the front doors."
+            : `${collected}/3 keys found. Keep moving—and listen for footsteps.`;
+        }
+      }
+
+      function drawTile(column, row, screenX, screenY) {
+        if (grid[row][column] === 1) {
+          ctx.fillStyle = "#292a27";
+          ctx.fillRect(screenX, screenY, TILE, TILE);
+          ctx.fillStyle = "#343530";
+          ctx.fillRect(screenX + 2, screenY + 2, TILE - 4, TILE - 4);
+          ctx.fillStyle = "#1d1f1d";
+          ctx.fillRect(screenX + 5, screenY + 5, TILE - 10, 4);
+          ctx.fillRect(screenX + 5, screenY + 5, 4, TILE - 10);
+        } else {
+          ctx.fillStyle = "#35342d";
+          ctx.fillRect(screenX, screenY, TILE, TILE);
+          ctx.fillStyle = "#3b3a32";
+          ctx.fillRect(screenX + 2, screenY + 2, TILE - 4, TILE - 4);
+          if ((column * 13 + row * 7) % 17 === 0) {
+            ctx.fillStyle = "#555044";
+            ctx.fillRect(screenX + 12, screenY + 17, 15, 2);
+          }
+        }
+      }
+
+      function drawWorld(time) {
+        const cameraMaxX = COLS * TILE - width;
+        const cameraMaxY = ROWS * TILE - height;
+        cameraX = Math.max(0, Math.min(cameraMaxX, player.x - width / 2));
+        cameraY = Math.max(0, Math.min(cameraMaxY, player.y - height / 2));
+        ctx.save();
+        ctx.translate(-cameraX, -cameraY);
+
+        const startCol = Math.max(0, Math.floor(cameraX / TILE) - 1);
+        const endCol = Math.min(COLS - 1, Math.ceil((cameraX + width) / TILE) + 1);
+        const startRow = Math.max(0, Math.floor(cameraY / TILE) - 1);
+        const endRow = Math.min(ROWS - 1, Math.ceil((cameraY + height) / TILE) + 1);
+        for (let row = startRow; row <= endRow; row++) {
+          for (let column = startCol; column <= endCol; column++) {
+            drawTile(column, row, column * TILE, row * TILE);
+          }
+        }
+
+        const exitPoint = center(exit.x, exit.y);
+        ctx.fillStyle = collected === 3 ? "#48734b" : "#583c36";
+        ctx.fillRect(exit.x * TILE + 7, exit.y * TILE + 5, TILE - 14, TILE - 10);
+        ctx.strokeStyle = collected === 3 ? "#91c17d" : "#9c6d55";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(exit.x * TILE + 7, exit.y * TILE + 5, TILE - 14, TILE - 10);
+        ctx.fillStyle = "#dfd3b6";
+        ctx.font = "10px Trebuchet MS";
+        ctx.textAlign = "center";
+        ctx.fillText("EXIT", exitPoint.x, exitPoint.y + 3);
+
+        for (const key of keys) {
+          if (key.found) continue;
+          const point = center(key.x, key.y);
+          const bob = Math.sin(time / 300 + key.phase) * 2;
+          ctx.save();
+          ctx.translate(point.x, point.y + bob);
+          ctx.shadowColor = "#f4c86b";
+          ctx.shadowBlur = 18;
+          ctx.strokeStyle = "#f3ca74";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(0, -3, 7, Math.PI, Math.PI * 2);
+          ctx.moveTo(-7, -3);
+          ctx.lineTo(-7, 9);
+          ctx.lineTo(8, 9);
+          ctx.moveTo(2, 5);
+          ctx.lineTo(2, 9);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        if (ghost.active) {
+          ctx.save();
+          ctx.translate(ghost.x, ghost.y);
+          ctx.shadowColor = "#b32b37";
+          ctx.shadowBlur = 24;
+          ctx.fillStyle = "#d8d2c7";
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 13, 16, 0, Math.PI, 0);
+          ctx.lineTo(13, 14);
+          ctx.lineTo(7, 10);
+          ctx.lineTo(1, 15);
+          ctx.lineTo(-5, 10);
+          ctx.lineTo(-13, 14);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = "#a9212d";
+          ctx.beginPath();
+          ctx.arc(-4, -2, 2.2, 0, Math.PI * 2);
+          ctx.arc(4, -2, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        ctx.fillStyle = "#d2c9b8";
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#272727";
+        ctx.beginPath();
+        ctx.arc(player.x + player.facingX * 4, player.y + player.facingY * 4, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      function drawLighting() {
+        const px = player.x - cameraX;
+        const py = player.y - cameraY;
+        ctx.save();
+        ctx.fillStyle = flashlightOn ? "rgba(2, 4, 5, .91)" : "rgba(2, 4, 5, .97)";
+        ctx.fillRect(0, 0, width, height);
+        ctx.globalCompositeOperation = "destination-out";
+
+        const ambientRadius = flashlightOn ? 82 : 48;
+        const ambient = ctx.createRadialGradient(px, py, 5, px, py, ambientRadius);
+        ambient.addColorStop(0, "rgba(0,0,0,.98)");
+        ambient.addColorStop(.55, "rgba(0,0,0,.78)");
+        ambient.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = ambient;
+        ctx.fillRect(px - ambientRadius, py - ambientRadius, ambientRadius * 2, ambientRadius * 2);
+
+        if (flashlightOn) {
+          const angle = Math.atan2(player.facingY, player.facingX);
+          const radius = 310;
+          const spread = 0.47;
+          const beam = ctx.createRadialGradient(px, py, 8, px, py, radius);
+          beam.addColorStop(0, "rgba(0,0,0,.97)");
+          beam.addColorStop(.72, "rgba(0,0,0,.9)");
+          beam.addColorStop(1, "rgba(0,0,0,0)");
+          ctx.fillStyle = beam;
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.arc(px, py, radius, angle - spread, angle + spread);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        ctx.restore();
+        const vignette = ctx.createRadialGradient(width / 2, height / 2, height * .18, width / 2, height / 2, Math.max(width, height) * .72);
+        vignette.addColorStop(0, "rgba(0,0,0,0)");
+        vignette.addColorStop(1, "rgba(0,0,0,.48)");
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      function draw(time) {
+        ctx.clearRect(0, 0, width, height);
+        drawWorld(time);
+        drawLighting();
+        if (!flashlightOn) {
+          ctx.fillStyle = "#e5d6b3";
+          ctx.font = "12px Trebuchet MS";
+          ctx.textAlign = "right";
+          ctx.fillText("FLASHLIGHT OFF (F)", width - 14, 24);
+        }
+      }
+
+      function loop(time) {
+        const dt = Math.min((time - lastTime) / 1000 || 0, 0.05);
+        lastTime = time;
+        update(dt);
+        draw(time);
+        requestAnimationFrame(loop);
+      }
+
+      function restart() {
+        for (const row of grid) row.fill(1);
+        grid.length = 0;
+        keys.length = 0;
+        collected = 0;
+        keyCount.textContent = "0";
+        ended = false;
+        flashlightOn = true;
+        ghost.active = false;
+        ghost.stepTimer = 0;
+        makeMaze();
+        overlay.hidden = true;
+        started = true;
+        setMessage("Find three keys. The front doors are somewhere in the dark.", 4);
+      }
+
+      startButton.addEventListener("click", restart);
+      window.addEventListener("resize", resize);
+      window.addEventListener("keydown", event => {
+        const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(key)) event.preventDefault();
+        if (key === "f" && !event.repeat && started) flashlightOn = !flashlightOn;
+        keysDown.add(key);
+      });
+      window.addEventListener("keyup", event => {
+        const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+        keysDown.delete(key);
+      });
+      window.addEventListener("blur", () => keysDown.clear());
+
+      for (const button of document.querySelectorAll(".touch-controls button")) {
+        const direction = button.dataset.dir;
+        const key = { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" }[direction];
+        button.addEventListener("pointerdown", event => {
+          event.preventDefault();
+          button.setPointerCapture(event.pointerId);
+          keysDown.add(key);
+        });
+        const release = () => keysDown.delete(key);
+        button.addEventListener("pointerup", release);
+        button.addEventListener("pointercancel", release);
+        button.addEventListener("lostpointercapture", release);
+      }
+
+      const mobileHelp = document.querySelector(".mobile");
+      if (matchMedia("(pointer: coarse)").matches) {
+        mobileHelp.innerHTML = "<strong>Move</strong> use the arrows &nbsp;·&nbsp; <strong>Flashlight</strong> tap the beam button";
+        const beamButton = document.createElement("button");
+        beamButton.type = "button";
+        beamButton.textContent = "☼";
+        beamButton.setAttribute("aria-label", "Toggle flashlight");
+        beamButton.title = "Toggle flashlight";
+        beamButton.style.cssText = "position:absolute;right:16px;bottom:108px;width:42px;height:42px;border:1px solid #c8b98b80;border-radius:50%;background:#111512d9;color:#f0e8d4;font-size:23px;touch-action:none";
+        beamButton.addEventListener("click", () => { flashlightOn = !flashlightOn; });
+        frame.append(beamButton);
+      } else {
+        mobileHelp.hidden = true;
+      }
+
+      makeMaze();
+      resize();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
